@@ -56,6 +56,8 @@ using ReadableRegex
 using Cascadia
 using DataFrames
 using CSV
+using Gumbo
+
 \
 
 #-------------------------------------------------------------------------------
@@ -110,7 +112,6 @@ function google_search(query, pages)
 end
 
 
-# NEEDS DE-BUGGING/ EXTRACTION NEEDS TO BE REDEFINED TO INTEGRATE 
 function STEM_search(query, pages)
 
     "
@@ -153,12 +154,47 @@ function STEM_search(query, pages)
 end
 
 
+# google search test [WORKING]
 
-search_data_raw = STEM_search("cancer", 2)
-search_data_parsed = parsehtml(String(search_data_raw[2][1]))
+
+    search_data_raw = google_search("cancer", 2)
+    search_data_parsed = parsehtml(String(search_data_raw[2]))
+    body = search_data_parsed.root[2]
+
+    urls = extraction_url(body)
+
+
+# research paper search test [NOT WORKING]
+"""
+issue:
+option2: Algorithm for url detection needs adjustment
+        Traversal of HTML Body? how can i do this better
+option3: incorrect cleaning
+
+"""
+
+"[google_scholar_results, pubmed_results, wos_results]"
+search_data_raw = STEM_search("cancer", 1) #ONLY PAGE 1
+search_data_parsed = parsehtml(String(search_data_raw[1][1]))
 body = search_data_parsed.root[2]
 
+# Initialize URL lists
+raw_URLs = []
+dirty_URLs = []
+
+# Start the recursive traversal
+traverse_and_extract_urls(body, raw_URLs, dirty_URLs)
+
+raw_URLs
+dirty_URLs
+
+
+
 urls = extraction_url(body)
+
+print_tree(urls)
+println(urls)
+
 
 
 
@@ -251,7 +287,7 @@ function extraction_url(body)
 
 
     #URL Types
-    raw_URLs = []
+    raw_URLs = [] # contain anchor tags
     dirty_URLs = []
     clean_URLs = []
     filtered_urls = []
@@ -268,10 +304,10 @@ function extraction_url(body)
             # println(tag(elem))  -  creates tree
             if tag(elem) == :a
                 push!(raw_URLs, elem)
-                #println(elem)
 
                 href = getattr(elem, "href")
                 push!(dirty_URLs, href)
+
 
             end
 
@@ -279,50 +315,75 @@ function extraction_url(body)
             println("")
         end
 
-
     end
 
 
 
-    # Acquiring "Clean" URLs
-    for urls in dirty_URLs
-        matches = eachmatch(url_pattern, urls)
+    # # Acquiring "Clean" URLs
+    # for urls in dirty_URLs
+    #     matches = eachmatch(url_pattern, urls)
 
-        if !isempty(matches)
-            url = first(matches).match
-            push!(clean_URLs, url)
-        else
-            println("No URL found in the input string.")
-        end
+    #     if !isempty(matches)
+    #         url = first(matches).match
+    #         push!(clean_URLs, url)
+    #     else
+    #         println("No URL found in the input string.")
+    #     end
 
-    end
-
-
-
-    ## Filtering Useless Clean URLs
-    "If it contains 'google' or doesn't equal 200"
-
-    for str in clean_URLs
-
-        if !occursin("google", str)
-
-            try
-                if HTTP.status(HTTP.request("GET", str)) == 200
-                    push!(filtered_urls, str)
-
-                end
-
-            catch
-                println("Can not access site")
-            end
-
-        end
-    end
-
-    return filtered_urls
+    # end
 
 
+
+    # ## Filtering Useless Clean URLs
+    # "If it contains 'google' or doesn't equal 200"
+    # for str in clean_URLs
+
+    #     if !occursin("google", str)
+
+    #         try
+    #             if HTTP.status(HTTP.request("GET", str)) == 200
+    #                 push!(filtered_urls, str)
+
+    #             end
+
+    #         catch
+    #             println("Can not access site")
+    #         end
+
+    #     end
+    # end
+
+    
+
+    
+    return dirty_URLs
 end
+
+function traverse_and_extract_urls(node, raw_URLs, dirty_URLs)
+    # Check if the node is an HTMLElement and process it
+    if isa(node, HTMLElement)
+        # Access the tag name of the element using the tag function
+        tag_name = tag(node)
+
+        # Check if the tag is an anchor ('a') tag
+        if tag_name == :a
+            href = getattr(node, "href", "")
+            if href != ""
+                push!(raw_URLs, node)
+                push!(dirty_URLs, href)
+            end
+        end
+    end
+
+    # Recursively traverse child nodes
+    for child in Gumbo.children(node)
+        traverse_and_extract_urls(child, raw_URLs, dirty_URLs)
+    end
+end
+
+
+
+
 
 
 function extraction_content(status, response)
