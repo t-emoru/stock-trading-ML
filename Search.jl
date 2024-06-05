@@ -1,18 +1,5 @@
 module Search
     
-    """Leave here for now, can be pushed to
-    designed SETUP FILE """
-
-    using Pkg
-    Pkg.add("HTTP")
-    Pkg.add("Gumbo")
-    Pkg.add("AbstractTrees")
-    Pkg.add("ReadableRegex")
-    Pkg.add("Cascadia")
-    Pkg.add("DataFrames")
-    Pkg.add("CSV")
-
-
     using HTTP, Gumbo
     using HTTP.Cookies
     using AbstractTrees
@@ -21,10 +8,11 @@ module Search
     using DataFrames
     using CSV
     using Gumbo
+    using JSON
 
     
     # EXPORT DEFINITIONS
-    export google_search
+    export GOOGLE_search
     export STEM_search
     export MEDIA_search
     export prompt_gen
@@ -36,7 +24,7 @@ module Search
 
 
     # FUNCTION DEFINITIONS
-    function GOOGLE_search(query, pages)
+    function GOOGLE_search(query::String, pages::Int=1)
         "
         Function: searches google using default query.
         Return: produces list of hmtl content of search webpages
@@ -75,7 +63,7 @@ module Search
     end
 
 
-    function STEM_search(query, pages)
+    function STEM_search(query::String, pages::Int=1)
 
         "
         Function: searches Scientific Paper websites using query.
@@ -117,36 +105,90 @@ module Search
     end
 
 
-    function MEDIA_search(query, pages)
+    function MEDIA_search(mode::String, query::String, pages::Int=1, limit::Int=25)
 
         "
         Function: takes in query (company) and searches Social Media & Media Outlets platforms 
-    
         Return: produces list of html content from each platform
+
+        *** CURRENT VERSION: only REDDIT Call
         
         "
         #--------Reddit-----------------
+            "
+            API Rules and Authentication: For more complex interactions or higher volume requests, 
+            you should use authenticated API requests as per Reddit's API guidelines. 
+            This might require registering your script as an application on Reddit to obtain an API key.
+        
+            "
+        
+            ## Returns REDDIT Search [STRING]
+        
+            # Combined function for Reddit operations
+            # Query = search query and name of subreddit determining on mode
+            # Search = returns an Array of HTML Content
+            # Posts = returns an Array of Dicts Content
     
-        ## General search
+        function REDDIT(mode::String, query::String, pages::Int=1, limit::Int=25)
+            
+            user_agent = "Mozilla/5.0 (Julia script; combined Reddit functionality)"
+            headers = Dict("User-Agent" => user_agent)
+        
+            if mode == "search"
+                # Functionality for searching Reddit
+                base_url = "https://www.reddit.com/search/?q="
+                results = []
+                
+                for page in 1:pages
+                    search_url = "$(base_url)$(HTTP.escapeuri(query))&page=$(page)"
+                    response = HTTP.get(search_url, headers=headers)
+                    
+                    if HTTP.status(response) == 200
+                        parsed_html = Gumbo.parsehtml(String(response.body))
+                        push!(results, parsed_html)
+                    else
+                        println("Failed to fetch the page: Status code ", HTTP.status(response))
+                    end
+                end
+        
+                return results
+                
+            elseif mode == "posts"
+                # Functionality for fetching posts from a specific subreddit
+                url = "https://www.reddit.com/r/$(query)/new.json?limit=$(limit)"
+                response = HTTP.get(url, headers=headers)
+                post_details = []
+                
+                if HTTP.status(response) == 200
+                    posts = JSON.parse(String(response.body))
+                    
+                    for post in posts["data"]["children"]
+                        title = post["data"]["title"]
+                        url = post["data"]["url"]
+                        permalink = "https://www.reddit.com" * post["data"]["permalink"]
+                        push!(post_details, Dict("title" => title, "url" => url, "permalink" => permalink))
+                    end
+                else
+                    println("Failed to fetch posts: Status code ", HTTP.status(response))
+                end
+        
+                return post_details
+                
+            else
+                println("Invalid mode. Please choose 'search' or 'posts'.")
+            end
+        end
+        
+        return REDDIT(mode, query, pages, limit)
     
+        #--------Twitter--------------------------------------
     
-        ## r/Stocks Monitoring
+        #--------Direct Outlets(Yahoo Finance)----------------
     
-    
-    
-        #--------Twitter----------------
-    
-    
-    
-        # Direct Outlets (Yahoo Finance & Bloomberg)
-    
-    
+        # HOLD OFF ON DEVELOPMENT TO PREVENT IP BAN [start work on Level 3]
+
     end
     
-    function prompt_gen(query)
-        #..
-    
-    end
     
 
     function request_access(urls, link)
@@ -171,6 +213,8 @@ module Search
         return status, response
     end
     
+
+    #Functions for Financial Data Search
 
 
  

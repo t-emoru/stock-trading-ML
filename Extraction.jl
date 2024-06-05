@@ -1,18 +1,5 @@
 module Extraction
     
-    """Leave here for now, can be pushed to
-    designed SETUP FILE """
-
-    using Pkg
-    Pkg.add("HTTP")
-    Pkg.add("Gumbo")
-    Pkg.add("AbstractTrees")
-    Pkg.add("ReadableRegex")
-    Pkg.add("Cascadia")
-    Pkg.add("DataFrames")
-    Pkg.add("CSV")
-
-
     using HTTP, Gumbo
     using HTTP.Cookies
     using AbstractTrees
@@ -30,8 +17,9 @@ module Extraction
     export extract_c_rank
 
 
-    
+
     # FUNCTION CONSTANTS
+    #make all lowercase!
     commodities = ["AppleAPPL", "WalmartWMT", "APPLE", "Apple",
         "Microsoft Corporation",
         "Amazon.com",
@@ -74,6 +62,7 @@ module Extraction
     ]
 
 
+    "TRY COMBINING JSON & Cascadia"
 
     # FUNCTION DEFINITIONS     
     function extraction_url(body)
@@ -120,39 +109,39 @@ module Extraction
 
 
 
-        # # Acquiring "Clean" URLs
-        # for urls in dirty_URLs
-        #     matches = eachmatch(url_pattern, urls)
+        # Acquiring "Clean" URLs
+        for urls in dirty_URLs
+            matches = eachmatch(url_pattern, urls)
 
-        #     if !isempty(matches)
-        #         url = first(matches).match
-        #         push!(clean_URLs, url)
-        #     else
-        #         println("No URL found in the input string.")
-        #     end
+            if !isempty(matches)
+                url = first(matches).match
+                push!(clean_URLs, url)
+            else
+                println("No URL found in the input string.")
+            end
 
-        # end
+        end
 
 
 
-        # ## Filtering Useless Clean URLs
-        # "If it contains 'google' or doesn't equal 200"
-        # for str in clean_URLs
+        ## Filtering Useless Clean URLs
+        "If it contains 'google' or doesn't equal 200"
+        for str in clean_URLs
 
-        #     if !occursin("google", str)
+            if !occursin("google", str)
 
-        #         try
-        #             if HTTP.status(HTTP.request("GET", str)) == 200
-        #                 push!(filtered_urls, str)
+                try
+                    if HTTP.status(HTTP.request("GET", str)) == 200
+                        push!(filtered_urls, str)
 
-        #             end
+                    end
 
-        #         catch
-        #             println("Can not access site")
-        #         end
+                catch
+                    println("Can not access site")
+                end
 
-        #     end
-        # end
+            end
+        end
 
         
 
