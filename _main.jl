@@ -59,7 +59,6 @@ Cummulative Algorithm Function:
 "
 
 
-cd("C:\\Users\\Tomi\\Documents\\_School & Exams\\_University\\Education & Classes\\_Coop\\Predictive Algorithm\\Machine Learning")
 
 # Custom Packaging Import
 include("SETUP.jl")
@@ -74,8 +73,15 @@ using .Search
 using .Extraction
 using .Analysis
 
-
-
+# move this somehow? for testing leave here
+using HTTP, Gumbo
+using HTTP.Cookies
+using AbstractTrees
+using ReadableRegex
+using Cascadia
+using DataFrames
+using CSV
+using Gumbo
 
 #-------------------------------------------------------------------------------
 # current testing block from old file
@@ -86,7 +92,15 @@ using .Analysis
 
 
 
+## 1. Initial Search for Companies
+query = " stock markets most profitable companies"
 
+### - Obtain Search Result URLS
+raw = GOOGLE_search(query)
+parsed = parsehtml(String(raw[1]))
+body = parsed.root[2]
+
+urls = extraction_url(body)
 
 # Extraction
 

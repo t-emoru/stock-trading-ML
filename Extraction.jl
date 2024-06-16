@@ -19,52 +19,12 @@ module Extraction
 
 
     # FUNCTION CONSTANTS
-    #make all lowercase!
-    commodities = ["AppleAPPL", "WalmartWMT", "APPLE", "Apple",
-        "Microsoft Corporation",
-        "Amazon.com",
-        "Alphabet",
-        "Facebook",
-        "Tesla",
-        "Berkshire Hathaway",
-        "Johnson & Johnson",
-        "JPMorgan Chase",
-        "Procter & Gamble",
-        "Visa",
-        "Walmart",
-        "Mastercard Incorporated",
-        "UnitedHealth Group Incorporated",
-        "Home Depot",
-        "Verizon Communications",
-        "Coca-Cola Company",
-        "Adobe",
-        "NVIDIA Corporation",
-        "Pfizer",
-        "Walt Disney Company",
-        "McDonald's Corporation",
-        "Netflix",
-        "AT&T",
-        "Salesforce",
-        "PayPal Holdings",
-        "ASML Holding N.V.",
-        "Cisco Systems",
-        "Comcast Corporation",
-        "PepsiCo",
-        "Intel Corporation",
-        "Costco Wholesale Corporation",
-        "Amgen",
-        "Zoom Video Communications",
-        "Charter Communications",
-        "Starbucks Corporation",
-        "Baidu",
-        "Broadcom",
-        "Milk", "Coca", "Sugar", "Sugar"
-    ]
 
 
     "TRY COMBINING JSON & Cascadia"
 
-    # FUNCTION DEFINITIONS     
+    # FUNCTION DEFINITIONS  
+
     function extraction_url(body)
 
         "
@@ -109,69 +69,56 @@ module Extraction
 
 
 
-        # Acquiring "Clean" URLs
-        for urls in dirty_URLs
-            matches = eachmatch(url_pattern, urls)
+        # # Acquiring "Clean" URLs
+        # for urls in dirty_URLs
+        #     matches = eachmatch(url_pattern, urls)
 
-            if !isempty(matches)
-                url = first(matches).match
-                push!(clean_URLs, url)
-            else
-                println("No URL found in the input string.")
-            end
+        #     if !isempty(matches)
+        #         url = first(matches).match
+        #         push!(clean_URLs, url)
+        #     else
+        #         println("No URL found in the input string.")
+        #     end
 
-        end
+        # end
 
 
 
-        ## Filtering Useless Clean URLs
-        "If it contains 'google' or doesn't equal 200"
-        for str in clean_URLs
+        # ## Filtering Useless Clean URLs
+        # "If it contains 'google' or doesn't equal 200"
+        # for str in clean_URLs
 
-            if !occursin("google", str)
+        #     if !occursin("google", str)
 
-                try
-                    if HTTP.status(HTTP.request("GET", str)) == 200
-                        push!(filtered_urls, str)
+        #         try
+        #             if HTTP.status(HTTP.request("GET", str)) == 200
+        #                 push!(filtered_urls, str)
 
-                    end
+        #             end
 
-                catch
-                    println("Can not access site")
-                end
+        #         catch
+        #             println("Can not access site")
+        #         end
 
-            end
-        end
-
-        
+        #     end
+        # end
 
         
-        return dirty_URLs
-    end
 
-    function traverse_and_extract_urls(node, raw_URLs, dirty_URLs)
-        # Check if the node is an HTMLElement and process it
-        if isa(node, HTMLElement)
-            # Access the tag name of the element using the tag function
-            tag_name = tag(node)
-
-            # Check if the tag is an anchor ('a') tag
-            if tag_name == :a
-                href = getattr(node, "href", "")
-                if href != ""
-                    push!(raw_URLs, node)
-                    push!(dirty_URLs, href)
-                end
-            end
-        end
-
-        # Recursively traverse child nodes
-        for child in Gumbo.children(node)
-            traverse_and_extract_urls(child, raw_URLs, dirty_URLs)
-        end
+        
+        return 1
     end
 
 
+
+
+
+
+
+
+
+
+    # Remanants [use as referenece in redesigning]
     function extraction_content(status, response)
 
         "
@@ -309,69 +256,7 @@ module Extraction
         return title_data, body_data, df_list
     
     end
-    
-    
-    function extract_company(tables, body_data)
-        "
-        Function: extracts company rankings from table data
-        Returns: produces list of companies 
-        
-        "
-    
-        company_list = []
-    
-        # Extract Company Names from body if NO Table
-        if length(tables) == 0
-    
-            found_companies = []
-            for target in body_data[1]
-                if target in commodities
-                    target = lowercase(target)
-                    push!(found_companies, target)
-                end
-            end
-    
-    
-            push!(company_list, found_companies)
-    
-        end
-    
-    
-        # Extract Company Names from Table
-        if length(tables) != 0
-    
-            for i in range(1, length(tables)) # for each table in tables
-    
-                columns_to_keep = []
-                data = tables[i]
-    
-                column_names = names(tables[i])
-                # println(column_names)
-    
-                for column in column_names
-                    if any(item -> item in commodities, data[!, column]) # comparing to reference list
-                        data[!, column] = [lowercase(s) for s in data[!, column]] # converts company output to lowercase
-    
-                        push!(columns_to_keep, data[!, column])
-                    end
-    
-    
-    
-                end
-    
-                push!(company_list, columns_to_keep)
-    
-            end
-    
-        end
-    
-        "conversion of company names to lowercase is for uniformity"
-    
-    
-    
-        return company_list
-    
-    end
+
 
     
     function extract_c_rank(rankings)
@@ -441,7 +326,7 @@ module Extraction
     end
     
 
-
+    # for commodities screening use AI API
  
 
 end
